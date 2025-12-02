@@ -1,4 +1,8 @@
-use std::{collections::HashSet, time::Instant};
+use std::{
+    collections::HashSet,
+    ops::{Range, RangeBounds},
+    time::Instant,
+};
 
 use rayon::iter::{
     IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
@@ -51,7 +55,7 @@ fn part1() {
 fn is_invalid2(id: usize) -> bool {
     let digits = id.ilog10() + 1;
 
-    'outer: for d in (1..=digits / 2).rev().filter(|d| digits % d == 0) {
+    'outer: for d in (1..=digits / 2).filter(|d| digits % d == 0) {
         let m = 10u64.pow(d);
         let pat = id as u64 % m;
         for i in 1..(digits / d) {
@@ -71,8 +75,9 @@ fn part2() {
     let sum: usize = input
         .par_bridge()
         .map(|s| s.split_at(s.find('-').unwrap()))
-        .map(|(l, r)| (l, &r[1..]))
-        .flat_map(|(l, r)| (l.parse::<usize>().unwrap())..(r.parse::<usize>().unwrap()))
+        .map(|(l, r)| [l, &r[1..]])
+        .map(|t| t.map(|i| i.parse::<usize>().unwrap()))
+        .flat_map(|[l, r]| l..r)
         .filter(|id| is_invalid2(*id))
         .sum();
     println!("P2: {}", sum);
