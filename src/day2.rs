@@ -1,6 +1,8 @@
 use std::{collections::HashSet, time::Instant};
 
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
+};
 
 const INPUT: &str = "8284583-8497825,7171599589-7171806875,726-1031,109709-251143,1039-2064,650391-673817,674522-857785,53851-79525,8874170-8908147,4197684-4326484,22095-51217,92761-107689,23127451-23279882,4145708930-4145757240,375283-509798,585093-612147,7921-11457,899998-1044449,3-19,35-64,244-657,5514-7852,9292905274-9292965269,287261640-287314275,70-129,86249864-86269107,5441357-5687039,2493-5147,93835572-94041507,277109-336732,74668271-74836119,616692-643777,521461-548256,3131219357-3131417388";
 
@@ -46,42 +48,32 @@ fn part1() {
     println!("P1: {}", count);
 }
 
-fn tiled_by(str: &str, pat: &str) -> bool {
-    if str.len() % pat.len() != 0 {
-        return false;
-    }
-    let mut i = 0;
-    while i + pat.len() <= str.len() {
-        if pat != &str[i..i + pat.len()] {
-            return false;
+fn is_invalid2(id: usize) -> bool {
+    let digits = id.ilog10() + 1;
+
+    'outer: for d in (1..=digits / 2).rev().filter(|d| digits % d == 0) {
+        let m = 10u64.pow(d);
+        let pat = id as u64 % m;
+        for i in 1..(digits / d) {
+            if pat != (id as u64 / 10u64.pow(d * i)) % m {
+                continue 'outer;
+            }
         }
 
-        i += pat.len();
+        return true;
     }
-    true
-}
 
-fn is_invalid2(str: &str) -> bool {
-    let mut i = 1;
-    while i <= str.len() / 2 {
-        let pat = &str[..i];
-        if tiled_by(str, pat) {
-            return true;
-        }
-        i += 1;
-    }
     false
 }
 
 fn part2() {
-    let input: Vec<&str> = INPUT.split(',').collect();
+    let input = INPUT.split(',');
     let sum: usize = input
-        .into_par_iter()
+        .par_bridge()
         .map(|s| s.split_at(s.find('-').unwrap()))
         .map(|(l, r)| (l, &r[1..]))
-        .map(|(l, r)| (l.parse::<usize>().unwrap())..(r.parse::<usize>().unwrap()))
-        .flat_map(|r| r)
-        .filter(|id| is_invalid2(&format!("{}", id)))
+        .flat_map(|(l, r)| (l.parse::<usize>().unwrap())..(r.parse::<usize>().unwrap()))
+        .filter(|id| is_invalid2(*id))
         .sum();
     println!("P2: {}", sum);
 }
