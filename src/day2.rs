@@ -1,7 +1,87 @@
-const INPUT: &str = "";
+use std::{collections::HashSet, time::Instant};
 
-pub fn run() {}
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-pub fn part1() {}
+const INPUT: &str = "8284583-8497825,7171599589-7171806875,726-1031,109709-251143,1039-2064,650391-673817,674522-857785,53851-79525,8874170-8908147,4197684-4326484,22095-51217,92761-107689,23127451-23279882,4145708930-4145757240,375283-509798,585093-612147,7921-11457,899998-1044449,3-19,35-64,244-657,5514-7852,9292905274-9292965269,287261640-287314275,70-129,86249864-86269107,5441357-5687039,2493-5147,93835572-94041507,277109-336732,74668271-74836119,616692-643777,521461-548256,3131219357-3131417388";
 
-pub fn part2() {}
+pub fn run() {
+    let now = Instant::now();
+    part1();
+    let elapsed = now.elapsed();
+    println!("Part1 Elapsed: {}ms", elapsed.as_millis());
+
+    let now = Instant::now();
+    part2();
+    let elapsed = now.elapsed();
+    println!("Part2 Elapsed: {}ms", elapsed.as_millis());
+}
+
+fn is_invalid(str: &str) -> bool {
+    if str.len() % 2 != 0 {
+        return false;
+    }
+
+    let (l, r) = str.split_at(str.len() / 2);
+    l == r
+}
+
+fn part1() {
+    let input: Vec<&str> = INPUT.split(',').collect();
+    let mapped = input
+        .into_iter()
+        .map(|s| s.split_at(s.find('-').unwrap()))
+        .map(|(l, r)| (l, &r[1..]))
+        .map(|(l, r)| (l.parse::<usize>().unwrap())..(r.parse::<usize>().unwrap()))
+        .collect::<Vec<_>>();
+
+    let mut count = 0;
+    for range in mapped {
+        for id in range {
+            if is_invalid(&format!("{}", id)) {
+                count += id;
+            }
+        }
+    }
+
+    println!("P1: {}", count);
+}
+
+fn tiled_by(str: &str, pat: &str) -> bool {
+    if str.len() % pat.len() != 0 {
+        return false;
+    }
+    let mut i = 0;
+    while i + pat.len() <= str.len() {
+        if pat != &str[i..i + pat.len()] {
+            return false;
+        }
+
+        i += pat.len();
+    }
+    true
+}
+
+fn is_invalid2(str: &str) -> bool {
+    let mut i = 1;
+    while i <= str.len() / 2 {
+        let pat = &str[..i];
+        if tiled_by(str, pat) {
+            return true;
+        }
+        i += 1;
+    }
+    false
+}
+
+fn part2() {
+    let input: Vec<&str> = INPUT.split(',').collect();
+    let sum: usize = input
+        .into_par_iter()
+        .map(|s| s.split_at(s.find('-').unwrap()))
+        .map(|(l, r)| (l, &r[1..]))
+        .map(|(l, r)| (l.parse::<usize>().unwrap())..(r.parse::<usize>().unwrap()))
+        .flat_map(|r| r)
+        .filter(|id| is_invalid2(&format!("{}", id)))
+        .sum();
+    println!("P2: {}", sum);
+}
