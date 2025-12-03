@@ -222,9 +222,6 @@ pub fn run() {
 }
 
 fn joltage(input: &str, digits: usize) -> u64 {
-    if digits == 0 {
-        return 0;
-    }
     let (i, d) = input[..=input.len() - digits]
         .bytes()
         .map(|d| d - b'0')
@@ -232,7 +229,12 @@ fn joltage(input: &str, digits: usize) -> u64 {
         .rev() // max by key returns the last, we want the first
         .max_by_key(|&(_i, d)| d)
         .unwrap();
-    d as u64 * 10u64.pow(digits as u32 - 1) + joltage(&input[i + 1..], digits - 1)
+    d as u64 * 10u64.pow(digits as u32 - 1)
+        + if digits > 1 {
+            joltage(&input[i + 1..], digits - 1)
+        } else {
+            0
+        }
 }
 
 // 17074
