@@ -1,5 +1,7 @@
 use std::{collections::HashSet, ops::RangeBounds, time::Instant};
 
+use itertools::Itertools;
+
 const INPUT: &str = "70642195371793-72879218404633
 173870324743912-174003164605263
 201707880905704-210661896929678
@@ -1232,29 +1234,20 @@ fn part1() {
 }
 
 fn part2() {
-    let mut input = INPUT.split('\n');
-    let mut ranges = Vec::new();
-
-    while let Some(line) = input.next() {
-        if line == "" {
-            break;
-        }
-        let mut l = line.split("-");
-        let (a, b) = (l.next().unwrap(), l.next().unwrap());
-        ranges.push((a.parse::<usize>().unwrap(), b.parse::<usize>().unwrap()));
-    }
-
-    ranges.sort_by(|l1, l2| l1.0.cmp(&l2.0));
-
-    let mut count = 0;
-    let mut i = 0;
-    for (lower, upper) in ranges {
-        if i > upper {
-            continue;
-        }
-        count += upper.max(i) - lower.max(i) + 1;
-        i = (upper + 1).max(i);
-    }
-
-    println!("{}", count);
+    let (c, _) = INPUT
+        .split("\n\n")
+        .next()
+        .unwrap()
+        .lines()
+        .filter_map(|line| line.split_once('-'))
+        .filter_map(|(l, h)| Some((l.parse::<usize>().ok()?, h.parse::<usize>().ok()?)))
+        .sorted()
+        .fold((0, 0), |(count, i), (low, high)| {
+            if i > high {
+                (count, i)
+            } else {
+                (count + high.max(i) - low.max(i) + 1, (high + 1).max(i))
+            }
+        });
+    println!("{}", c);
 }
