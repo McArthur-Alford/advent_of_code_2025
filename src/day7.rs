@@ -2,7 +2,24 @@ use std::{collections::HashSet, ops::RangeBounds, time::Instant};
 
 use itertools::Itertools;
 
-const INPUT: &str = "";
+const INPUT: &str = "
+.......S.......
+...............
+.......^.......
+...............
+......^.^......
+...............
+.....^.^.^.....
+...............
+....^.^...^....
+...............
+...^.^...^.^...
+...............
+..^...^.....^..
+...............
+.^.^.^.^.^...^.
+...............
+";
 
 const INPUT2: &str = "
 ......................................................................S......................................................................
@@ -188,30 +205,22 @@ fn part1() {
 }
 
 fn part2() {
-    let mut lines = INPUT2.lines().skip(1).collect_vec();
-    // let mut indices = HashSet::new();
-    let mut splits = 0;
-
-    let mut row = Vec::<usize>::new();
-    let mut row2 = Vec::<usize>::new();
-    for _ in 0..lines[0].len() {
-        row.push(1);
-        row2.push(1);
-    }
-
-    for line in lines.into_iter().rev() {
-        dbg!(line);
-        for (i, char) in line.chars().enumerate() {
-            match char {
-                '^' => row2[i] = *row.get(i - 1).unwrap_or(&0) + *row.get(i + 1).unwrap_or(&0),
+    let lines = INPUT
+        .lines()
+        .filter(|l| !l.chars().all(|c| c == '.'))
+        .collect_vec();
+    let len = lines[0].len();
+    lines.into_iter().rev().fold(vec![1; len], |acc, b| {
+        b.chars()
+            .enumerate()
+            .map(|(i, c)| match c {
+                '^' => acc.get(i - 1).unwrap_or(&0) + acc.get(i + 1).unwrap_or(&0),
                 'S' => {
-                    row2[i] = row[i];
-                    println!("{}", row2[i]);
+                    println!("{}", acc[i]);
+                    acc[i]
                 }
-                _ => row2[i] = row[i],
-            }
-        }
-        // println!("{:?}", row2);
-        row = row2.clone();
-    }
+                _ => 0,
+            })
+            .collect()
+    });
 }
