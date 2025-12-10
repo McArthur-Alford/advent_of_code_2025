@@ -49,6 +49,8 @@
             udev
             wayland
             vulkan-loader
+            stdenv.cc.libc
+            z3
           ]
           ++ (with xorg; [
             libXcursor
@@ -65,6 +67,7 @@
 
         devShells.default = craneLib.devShell {
           LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath runtimeDeps}";
+          LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
           hardeningDisable = [ "fortify" ];
           packages =
@@ -79,6 +82,7 @@
               rust-analyzer
               wgsl-analyzer
               just
+              stdenv.cc.libc
             ])
             ++ runtimeDeps;
         };
