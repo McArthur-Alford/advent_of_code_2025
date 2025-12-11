@@ -2,13 +2,15 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet, VecDeque},
     ops::RangeBounds,
     str::Chars,
-    sync::atomic::AtomicU32,
+    sync::atomic::{AtomicU32, AtomicUsize, Ordering},
     time::Instant,
 };
 
 use itertools::Itertools;
 use memoize::memoize;
-use rayon::iter::{IntoParallelIterator, ParallelBridge, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
+};
 use z3::{Optimize, Params, Solver, ast::Int};
 
 const INPUT: &str = "
@@ -692,28 +694,22 @@ fn part1() {
 fn part2() {
     let (mapping, edges) = parse();
 
-    let total = dfs(mapping["svr"], mapping["out"], &edges, &vec![]);
-    memoized_flush_dfs();
-    let without_dac = dfs(
-        mapping["svr"],
-        mapping["out"],
-        &edges,
-        &vec![mapping["dac"]],
-    );
-    memoized_flush_dfs();
-    let without_fft = dfs(
-        mapping["svr"],
-        mapping["out"],
-        &edges,
-        &vec![mapping["fft"]],
-    );
-    memoized_flush_dfs();
-    let without_both = dfs(
-        mapping["svr"],
-        mapping["out"],
-        &edges,
-        &vec![mapping["dac"], mapping["fft"]],
-    );
+    let start = mapping["svr"];
+    let end = mapping["out"];
+    let dac = mapping["dac"];
+    let fft = mapping["fft"];
+
+    let [total, without_dac, without_fft, without_both] =
+        [Vec::new(), vec![dac], vec![fft], vec![dac, fft]]
+            // .par_iter()
+            .iter()
+            .map(|banned| {
+                memoized_flush_dfs();
+                dfs(start, end, &edges, &banned)
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
 
     println!(
         "with dac or fft: {}",
